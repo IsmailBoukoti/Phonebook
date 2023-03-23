@@ -1,0 +1,1 @@
+"INSERT INTO contacts VALUES ("Mario","Rossi","3456045825")"
