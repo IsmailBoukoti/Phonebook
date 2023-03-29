@@ -1,14 +1,10 @@
 package com.ismailboukoti.phonebook.dao;
-
-import com.ismailboukoti.phonebook.dto.request.ContactRequestDto;
-import com.ismailboukoti.phonebook.dto.response.ContactNoEmailResponseDto;
-import com.ismailboukoti.phonebook.dto.response.ContactResponseDto;
-import com.ismailboukoti.phonebook.mapper.ContactMapper;
+import com.ismailboukoti.phonebook.exception.ApiRequestException;
 import com.ismailboukoti.phonebook.model.Contact;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-
 import javax.sql.DataSource;
 import java.util.List;
 
@@ -26,43 +22,60 @@ public class ContactDAOImpl implements ContactDAO {
     }
 
     @Override
-    public void save(ContactRequestDto contactRequestDto) {
-        String sql = "INSERT INTO contacts (name, email, phonenumber) VALUES (?,?,?)";
-        jdbcTemplate.update(sql, contactRequestDto.getName(),contactRequestDto.getEmail(),contactRequestDto.getPhoneNumber());
+    public Contact save(Contact contact) {
+        String sql = "INSERT INTO contacts (name, surname, address, email, phonenumber) VALUES (?,?,?,?,?)";
+        jdbcTemplate.update(sql, contact.getName(), contact.getSurname(), contact.getAddress(), contact.getEmail(), contact.getPhoneNumber());
+        return contact;
     }
 
     @Override
-    public List<ContactNoEmailResponseDto> getAll() {
+    public List<Contact> getAll() {
         String sql = "SELECT * FROM contacts";
         return jdbcTemplate.query(
                 sql,
                 (rs, rowNum) ->
-                        new ContactNoEmailResponseDto(
+                        new Contact(
+                                rs.getInt("id"),
                                 rs.getString("name"),
-                                rs.getString("phonenumber")
+                                rs.getString("surname")
                         )
         );
     }
 
     @Override
-    public ContactResponseDto getById(int id) {
-        String sql = "SELECT * FROM contacts WHERE ID = ?";
-        return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
-                new ContactResponseDto(
-                        rs.getString("name"),
-                        rs.getString("email"),
-                        rs.getString("phonenumber")
-                ), id);
+    public Contact getById(int id) {
+        try {
+            String sql = "SELECT * FROM contacts WHERE ID = ?";
+            return jdbcTemplate.queryForObject(sql, (rs, rowNum) ->
+                    new Contact(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("surname"),
+                            rs.getString("address"),
+                            rs.getString("email"),
+                            rs.getString("phonenumber")
+                    ), id);
+        } catch (DataAccessException e) {
+            throw new ApiRequestException("The requested contact cannot be found");
+        }
     }
 
     @Override
-    public void update(ContactRequestDto contactRequestDto, int id) {
-        jdbcTemplate.update("UPDATE contacts SET name=?, email=?, phonenumber=? WHERE id =?",
-                contactRequestDto.getName(),contactRequestDto.getEmail(),contactRequestDto.getPhoneNumber(),id);
+    public void update(Contact contact, int id) {
+        try {
+            jdbcTemplate.update("UPDATE contacts SET name=?,surname=?,address=?, email=?, phonenumber=? WHERE id =?",
+                    contact.getName(),contact.getSurname(),contact.getAddress(), contact.getEmail(), contact.getPhoneNumber(), id);
+        } catch (DataAccessException e) {
+            throw new ApiRequestException("The requested contact that you want to update cannot be found");
+        }
     }
 
     @Override
     public void delete(int id) {
-        jdbcTemplate.update("DELETE FROM contacts WHERE id=?", id);
+        try {
+            jdbcTemplate.update("DELETE FROM contacts WHERE id=?", id);
+        } catch (DataAccessException e) {
+            throw new ApiRequestException("The requested contact that you want to delete cannot be found");
+        }
     }
 }

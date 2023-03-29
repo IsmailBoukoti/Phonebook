@@ -1,8 +1,5 @@
 package com.ismailboukoti.phonebook.dao;
 
-import com.ismailboukoti.phonebook.dto.request.ContactRequestDto;
-import com.ismailboukoti.phonebook.dto.response.ContactNoEmailResponseDto;
-import com.ismailboukoti.phonebook.dto.response.ContactResponseDto;
 import com.ismailboukoti.phonebook.model.Contact;
 
 import java.util.List;
@@ -15,16 +12,16 @@ public interface ContactDAO {
    /**
     * Saves a contact.
     *
-    * @param contactRequestDto the contact
+    * @param contact the contact
     */
-   void save(ContactRequestDto contactRequestDto);
+   Contact save(Contact contact);
 
    /**
     * Gets a list of all the contact.
     *
     * @return the all
     */
-   List<ContactNoEmailResponseDto> getAll();
+   List<Contact> getAll();
 
    /**
     * Gets contact by id.
@@ -32,15 +29,15 @@ public interface ContactDAO {
     * @param id the id of the contact
     * @return the by id contact
     */
-   ContactResponseDto getById(int id);
+   Contact getById(int id);
 
    /**
     * Update a contact by id.
     *
-    * @param contactRequestDto the contact
+    * @param contact the contact
     * @param id      the id
     */
-   void update (ContactRequestDto contactRequestDto, int id);
+   void update (Contact contact, int id);
 
    /**
     * Delete by id.

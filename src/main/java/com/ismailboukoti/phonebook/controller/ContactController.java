@@ -1,16 +1,15 @@
 package com.ismailboukoti.phonebook.controller;
-
 import com.ismailboukoti.phonebook.dao.ContactDAO;
-import com.ismailboukoti.phonebook.dto.request.ContactRequestDto;
-import com.ismailboukoti.phonebook.dto.response.ContactNoEmailResponseDto;
-import com.ismailboukoti.phonebook.dto.response.ContactResponseDto;
+import com.ismailboukoti.phonebook.dto.ContactDTO;
+import com.ismailboukoti.phonebook.dto.response.ContactNameSurnameDto;
 import com.ismailboukoti.phonebook.model.Contact;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * The Contact controller.
@@ -21,6 +20,9 @@ public class ContactController {
 
     @Autowired
     private ContactDAO contactDAO;
+
+    @Autowired
+    ModelMapper modelMapper;
 
     /**
      * A welcome message for the /phonebook endpoint.
@@ -38,8 +40,9 @@ public class ContactController {
      * @return the list of contacts
      */
     @GetMapping("/contacts")
-    public List<ContactNoEmailResponseDto> getContacts(){
-      return  contactDAO.getAll();
+    public List<ContactNameSurnameDto> getContacts(){
+      return  contactDAO.getAll().stream().map(contact -> modelMapper.map(contact, ContactNameSurnameDto.class))
+              .collect(Collectors.toList());
     }
 
     /**
@@ -49,33 +52,40 @@ public class ContactController {
      * @return the contact
      */
     @GetMapping("/contacts/{id}")
-    public ContactResponseDto getContactById(@PathVariable int id){
-       return contactDAO.getById(id);
+    public ResponseEntity<ContactDTO> getContactById(@PathVariable int id){
+        Contact contact = contactDAO.getById(id);
+        ContactDTO contactDTO = modelMapper.map(contact,ContactDTO.class);
+       return ResponseEntity.status(HttpStatus.OK).body(contactDTO);
     }
 
     /**
      * Saves a contact.
      *
-     * @param contactRequestDto the contact
+     * @param contactDTO the contact
      * @return The HTTP 201 Created status code and contact as body.
      */
     @PostMapping("/contacts")
-    public ResponseEntity<String> saveContact(@RequestBody ContactRequestDto contactRequestDto){
-        contactDAO.save(contactRequestDto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(contactRequestDto + "The contact has been saved");
+    public ResponseEntity<ContactDTO> saveContact(@RequestBody ContactDTO contactDTO){
+        Contact contactRequest = modelMapper.map(contactDTO, Contact.class);
+        Contact contact = contactDAO.save(contactRequest);
+        ContactDTO contactResponse = modelMapper.map(contact,ContactDTO.class);
+        return ResponseEntity.status(HttpStatus.CREATED).body(contactResponse);
     }
 
     /**
      * Updates a contact.
      *
      * @param id      the id of the contact
-     * @param contactRequestDto the contact
+     * @param contactDTO the contact
      * @return void
      */
     @PutMapping("/contacts/{id}")
-    public ResponseEntity<String> updateContact(@PathVariable int id,@RequestBody ContactRequestDto contactRequestDto){
-        contactDAO.update(contactRequestDto,id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("The contact has been updated");
+    public ResponseEntity<ContactDTO> updateContact(@PathVariable int id,@RequestBody Contact contactDTO){
+        Contact contactRequest = modelMapper.map(contactDTO, Contact.class);
+        Contact contact = contactDAO.save(contactRequest);
+        ContactDTO contactResponse = modelMapper.map(contact,ContactDTO.class);
+        contactDAO.update(contactDTO,id);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(contactResponse);
     }
 
     /**
@@ -85,8 +95,8 @@ public class ContactController {
      * @return void
      */
     @DeleteMapping("/contacts/{id}")
-    public ResponseEntity<String> deleteContact(@PathVariable int id) {
+    public ResponseEntity<Void> deleteContact(@PathVariable int id) {
         contactDAO.delete(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).body("The contact has been deleted");
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }
